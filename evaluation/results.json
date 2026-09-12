@@ -1,0 +1,10 @@
+{
+  "n": 200,
+  "rule_accuracy": 0.965,
+  "rule_macro_f1": 0.9446372592924317,
+  "tfidf_nn_accuracy": 0.485,
+  "tfidf_nn_macro_f1": 0.4841731248873285,
+  "escalation_heuristic_accuracy": 0.63,
+  "escalation_heuristic_macro_f1": 0.49993242330044596,
+  "retrieval_train_pairs": 50000
+}
