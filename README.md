@@ -1,68 +1,60 @@
-# Hiver SDE Intern — AI Support Agent
+# Hiver SDE Intern — Customer Support AI Agent
 
-A reproducible take-home implementation for the Hiver SDE Intern assignment.
+A reproducible support-agent prototype built from the Customer Support on Twitter (TWCS) dataset. The selected brand is **AppleSupport**, chosen after profiling support-account volume and inspecting representative customer→brand response pairs.
 
-## Goal
+## What it does
 
-Build and evaluate an AI customer-support agent for one brand from the Customer Support on Twitter dataset. The agent will:
+1. Classifies an incoming customer tweet into a compact AppleSupport-specific intent taxonomy.
+2. Retrieves historically similar AppleSupport cases and their support responses.
+3. Drafts a response grounded in those historical patterns.
+4. Applies a conservative escalation gate with an explicit reason.
 
-1. Classify incoming customer messages into a small, data-derived intent taxonomy.
-2. Draft a response grounded in historically resolved conversations.
-3. Decide whether to auto-handle or escalate, with a reason.
+The project deliberately does **not** attempt private-DM resolution, account actions, refunds, or real-time Apple policy lookup. Public Twitter data is evidence of historical behavior, not a current policy source.
 
-## Evaluation-first design
+## Dataset
 
-This repository treats evaluation as the primary product. Results will include:
+Use the Kaggle **Customer Support on Twitter** dataset (`thoughtvector/customer-support-on-twitter`). The raw CSV is intentionally not committed because it is ~500 MB. Put it at `data/raw/twcs.csv`.
 
-- Intent accuracy and macro-F1, including per-intent results.
-- Reply-quality evaluation with an explicit rubric.
-- LLM-as-judge validation against a human-scored subset.
-- Escalation precision/recall and false-auto-handle analysis.
-- Comparisons against a trivial baseline and a simple retrieval baseline.
-- Failure analysis and a mandatory discussion of what the headline number hides.
+## Quickstart
 
-## Reproduction
-
-The final README will contain the exact commands, dataset access instructions, model configuration, and expected runtime needed to reproduce the headline results in under 15 minutes on a normal laptop/API setup.
-
-## Project status
-
-Initial repository scaffold created. Data profiling and brand selection are next; the brand and intent taxonomy are intentionally not hard-coded until the dataset is inspected.
-
-## Structure
-
-```text
-.
-├── README.md
-├── requirements.txt
-├── .env.example
-├── data/
-│   ├── README.md
-│   └── golden_set.csv
-├── src/
-│   ├── preprocessing.py
-│   ├── conversation_builder.py
-│   ├── taxonomy.py
-│   ├── retrieval.py
-│   ├── classifier.py
-│   ├── responder.py
-│   ├── escalation.py
-│   └── pipeline.py
-├── evaluation/
-│   ├── evaluate.py
-│   ├── metrics.py
-│   ├── judge.py
-│   ├── human_judge_agreement.py
-│   └── baselines.py
-├── experiments/
-│   └── results.csv
-├── notebooks/
-│   └── exploration.ipynb
-└── report/
-    ├── report.md
-    └── decision_log.md
+```bash
+python -m venv .venv
+# Windows: .venv\\Scripts\\activate
+# macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
+python - <<'PY'
+from src.preprocess import build_brand_pairs
+n = build_brand_pairs('data/raw/twcs.csv', 'AppleSupport', 'data/brand_pairs.csv')
+print('paired cases:', n)
+PY
 ```
 
-## License
+Then run the evaluation harness:
 
-This project is an interview take-home implementation. Dataset terms and API/model terms remain those of their respective providers.
+```bash
+python -m evaluation.evaluate data/golden_set.csv
+```
+
+For API-backed generation, set `OPENAI_API_KEY` and `OPENAI_MODEL` in `.env`. The offline retrieval/rules path remains runnable without an API key.
+
+## Evaluation philosophy
+
+The primary metric is not a single chatbot score. We separately measure intent macro-F1, per-intent performance, escalation false-auto-handle rate, and grounded reply quality. Reply quality is judged with a six-dimension rubric and calibrated against human ratings on a held-out subset.
+
+### Baselines
+
+- **Trivial:** majority intent + generic support response.
+- **Simple:** TF-IDF nearest-neighbor retrieval + transparent keyword intent rules.
+- **Agent:** intent + historical retrieval + grounded response generation + escalation gate.
+
+## Golden set
+
+The golden set is sampled from held-out AppleSupport customer messages with deterministic random seeds. Sampling is stratified across intents and includes ambiguous/high-risk cases. Each example contains a human-reviewed intent, escalation label, and reply-quality criteria. No golden example is used to fit the retrieval index.
+
+## Failure analysis
+
+The report tracks five recurring risks: ambiguous messages, multi-intent messages, missing historical precedent, overconfident unsupported replies, and unsafe auto-handling.
+
+## Reproducibility
+
+All sampling uses explicit random seeds. Raw data is excluded from git; only derived, non-sensitive evaluation artifacts are committed. Final measured results will be frozen after the golden set and benchmark run are complete.
