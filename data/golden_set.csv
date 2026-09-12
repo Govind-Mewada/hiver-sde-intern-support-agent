@@ -1,2 +1,3 @@
 tweet_id,created_at,customer_text,intent,escalate_label,evidence_response,label_source
-875252,2017-11-27,"sample AppleSupport customer message",device_update_problem,0,"sample historical support response",curated_initial_annotation
+875252,Mon Oct 09 22:02:55 +0000 2017,@AppleSupport Thanks I will update. Had 11.0.1,ios_update,0,@327808 Great! Just let us know how that goes.,curated_initial_annotation
+601379,Sun Dec 03 21:22:39 +0000 2017,@AppleSupport I can't download this app from the App Store,app_store,0,@327808 We'd like to look into that with you. Please send us a DM.,curated_initial_annotation
