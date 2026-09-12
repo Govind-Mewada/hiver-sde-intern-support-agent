@@ -1,0 +1,16 @@
+.env
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env.*
+.DS_Store
+.ipynb_checkpoints/
+data/raw/
+data/cache/
+*.parquet
+*.feather
+*.sqlite
+.pytest_cache/
+.coverage
+htmlcov/
