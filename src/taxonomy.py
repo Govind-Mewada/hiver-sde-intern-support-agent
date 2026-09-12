@@ -1,40 +1,39 @@
-"""Brand-specific intent taxonomy derived from exploratory AppleSupport samples."""
+"""AppleSupport intent taxonomy and transparent offline baseline classifier."""
+from __future__ import annotations
+import re
 
 INTENTS = {
-    "device_update_problem": "iOS/macOS update causes a device or app problem",
-    "battery_power": "battery life, charging, overheating or power issue",
-    "account_access": "Apple ID, password, lockout or account access issue",
-    "icloud": "iCloud storage, sync, backup or iCloud access issue",
-    "app_store_itunes": "App Store, iTunes, app purchase/download issue",
-    "billing_charge": "unexpected charge, payment, billing or purchase dispute",
-    "apple_pay": "Apple Pay or wallet payment issue",
-    "connectivity": "Wi-Fi, cellular, Bluetooth or connectivity problem",
-    "device_hardware": "physical device/hardware issue or device not working",
-    "order_delivery": "device order, reservation, delivery or shipment issue",
-    "software_app": "software/app behavior not covered by update/connectivity",
-    "general_support": "request for help, information, or an issue too ambiguous to classify",
+    "device_update_problem": "an iOS/macOS update or upgrade caused a device/software problem",
+    "battery_power": "battery life, charging, overheating, or power issue",
+    "account_access": "Apple ID, password, verification, lockout, sign-in, or account recovery",
+    "icloud": "iCloud storage, sync, backup, or iCloud library/access issue",
+    "app_store_itunes": "App Store, iTunes, Apple Music download, or app purchase/download issue",
+    "billing_charge": "unexpected charge, declined payment, refund, billing, or payment dispute",
+    "apple_pay": "Apple Pay / Apple Pay Cash / Wallet issue",
+    "connectivity": "Wi-Fi, cellular/LTE, Bluetooth, hotspot, network, or internet issue",
+    "device_hardware": "physical hardware, screen, camera, speaker, button, keyboard, or power-on issue",
+    "order_delivery": "device order, preorder, reservation, pickup, shipping, tracking, or delivery issue",
+    "software_app": "software/app crash, bug, error, freeze, slowness, or behavior issue not better covered elsewhere",
+    "general_support": "ambiguous request, acknowledgement, or issue without enough evidence for another intent",
 }
 
-# Conservative keyword rules are intentionally transparent and are used only for
-# the offline baseline / bootstrapping. The production path can replace them with
-# an LLM classifier without changing the evaluation interface.
-RULES = [
-    ("order_delivery", ["order", "delivery", "delivered", "shipping", "shipment", "reserved", "reservation"]),
-    ("billing_charge", ["charged", "charge", "billing", "refund", "money back", "payment"]),
-    ("apple_pay", ["apple pay", "wallet"]),
-    ("icloud", ["icloud", "i cloud"]),
-    ("account_access", ["apple id", "password", "locked out", "account locked", "verification code", "sign in"]),
-    ("app_store_itunes", ["app store", "itunes", "download app", "in-app purchase"]),
-    ("battery_power", ["battery", "charging", "charger", "overheating", "overheat"]),
-    ("connectivity", ["wifi", "wi-fi", "bluetooth", "cellular", "network", "internet"]),
-    ("device_update_problem", ["ios update", "ios 11", "ios 12", "ios 13", "ios 14", "ios 15", "ios 16", "ios 17", "ios 18", "update", "updated"]),
-    ("device_hardware", ["screen", "display", "broken", "cracked", "camera", "speaker", "microphone"]),
-    ("software_app", ["crash", "crashes", "freezes", "not working", "error", "bug"]),
+PATTERNS = [
+    ("apple_pay", r"apple\s*pay|apple pay cash|\bwallet\b"),
+    ("icloud", r"\bicloud\b|i cloud|icloud library|icloud backup"),
+    ("order_delivery", r"\b(order|pre[- ]?order|shipping|shipment|reservation confirmation|reserve.*iphone|pickup.*store|delivery)\b"),
+    ("battery_power", r"battery|battery life|charging|charger|overheat|overheating|power drain|power consumption"),
+    ("billing_charge", r"\b(charged|billing|refund|refunded|payment method|payment|invoice|credit card|purchase dispute)\b"),
+    ("account_access", r"apple id|password|locked out|account locked|verification code|security questions|sign[ -]?in|login|recover.*account|account.*recover|hacked"),
+    ("app_store_itunes", r"app store|itunes|download.*app|app.*download|in[- ]app purchase|apple music.*download"),
+    ("connectivity", r"wi[ -]?fi|bluetooth|cellular|lte|network|internet|signal|hotspot|connect.*wifi|connect.*car"),
+    ("device_update_problem", r"\bios\s*\d|software update|\bupdated?\b|\bupgrade(d)?\b|latest (ios|software) update|after (the )?(latest )?(ios|software) update"),
+    ("device_hardware", r"screen|display|cracked|broken|speaker|microphone|home button|keyboard|camera|hardware|won.t turn on|won.t power on"),
+    ("software_app", r"crash|crashes|crashed|freeze|freezes|frozen|error|bug|glitch|not working|doesn.t work|won.t work|slow|stuck|missing|sound stops|app.*problem"),
 ]
 
 def rule_intent(text: str) -> str:
-    t = (text or "").lower()
-    for intent, terms in RULES:
-        if any(term in t for term in terms):
+    t = text or ""
+    for intent, pattern in PATTERNS:
+        if re.search(pattern, t, flags=re.I):
             return intent
     return "general_support"
