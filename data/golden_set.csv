@@ -1,0 +1,2 @@
+tweet_id,created_at,customer_text,intent,escalate_label,evidence_response,label_source
+875252,2017-11-27,"sample AppleSupport customer message",device_update_problem,0,"sample historical support response",curated_initial_annotation
